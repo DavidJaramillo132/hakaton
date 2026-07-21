@@ -33,6 +33,7 @@ export type ResultadoRiesgo = {
 };
 
 export type ApiAnalysisResponse = { resultado: ResultadoRiesgo; analisis: Analisis };
+export type HistoryData = { fields: Campo[]; analyses: Analisis[] };
 export type ClimaResumen = { temp_max: number | null; temp_min: number | null; prob_lluvia: number | null; humedad: number | null };
 export type IndiceRiesgoDiario = { puntuacion: number; nivel: NivelRiesgo };
 export type PronosticoDia = {

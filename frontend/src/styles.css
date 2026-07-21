@@ -8,3 +8,5 @@
   button { cursor: pointer; }
   .leaflet-bar a { color: #287247 !important; }
 }
+
+@keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }

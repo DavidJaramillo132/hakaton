@@ -1,6 +1,10 @@
 import type { ApiAnalysisResponse } from "../types";
 
-/** Punto de extensión para una futura confirmación manual en Supabase. */
+/**
+ * Los análisis se persisten automáticamente en la Edge Function analizarRiesgo.
+ * Este helper se conserva como punto de extensión para futuras acciones sobre
+ * un análisis, pero no vuelve a insertar el registro y evita duplicados.
+ */
 export async function guardarAnalisis(_resultado: ApiAnalysisResponse): Promise<void> {
-  await Promise.resolve();
+  return Promise.resolve();
 }

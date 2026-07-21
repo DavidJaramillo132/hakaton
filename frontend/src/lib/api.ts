@@ -1,4 +1,4 @@
-import type { ApiAnalysisResponse, Campo, Coordinates, HeatmapResponse, Imagen, PendingPhoto } from "../types";
+import type { Analisis, ApiAnalysisResponse, Campo, Coordinates, HeatmapResponse, HistoryData, Imagen, PendingPhoto } from "../types";
 import { parseHeatmapResponse } from "./heatmap";
 import { supabase } from "./supabase";
 
@@ -103,7 +103,7 @@ export async function loadHeatmapRisk(): Promise<HeatmapResponse> {
   }
 }
 
-export async function loadHistory(): Promise<{ fields: Campo[]; analyses: Record<string, import("../types").Analisis> }> {
+export async function loadHistory(): Promise<HistoryData> {
   const db = client();
   const [{ data: fields, error: fieldsError }, { data: rows, error: analysesError }] = await Promise.all([
     db.from("campos").select("*").order("created_at", { ascending: false }),
@@ -111,9 +111,5 @@ export async function loadHistory(): Promise<{ fields: Campo[]; analyses: Record
   ]);
   if (fieldsError) throw new Error(fieldsError.message);
   if (analysesError) throw new Error(analysesError.message);
-  const analyses = (rows ?? []).reduce<Record<string, import("../types").Analisis>>((acc, analysis) => {
-    if (!acc[analysis.campo_id]) acc[analysis.campo_id] = analysis as import("../types").Analisis;
-    return acc;
-  }, {});
-  return { fields: (fields ?? []) as Campo[], analyses };
+  return { fields: (fields ?? []) as Campo[], analyses: (rows ?? []) as Analisis[] };
 }
