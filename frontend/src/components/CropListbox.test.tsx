@@ -7,7 +7,7 @@ describe("CropListbox", () => {
     const onChange = vi.fn();
     render(<CropListbox value="" onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: /cultivo/i }));
-    fireEvent.click(screen.getByRole("option", { name: "Cacao" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cacao" }));
     expect(onChange).toHaveBeenCalledWith("cacao");
   });
 });

@@ -10,4 +10,15 @@ describe("PhotoPicker", () => {
     fireEvent.change(screen.getByLabelText(/Arrastra fotos/i), { target: { files: [file] } });
     expect(onChange).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ file, descripcion: "" })]));
   });
+  it("accepts a dropped photo and permits removing it", () => {
+    const file = new File(["photo"], "cultivo.png", { type: "image/png" });
+    const photo = { id: "one", file, descripcion: "", preview: "blob:one" };
+    const onChange = vi.fn();
+    const { rerender } = render(<PhotoPicker photos={[]} onChange={onChange} onError={vi.fn()} />);
+    fireEvent.drop(screen.getByText(/Arrastra fotos/i).closest("label")!, { dataTransfer: { files: [file] } });
+    expect(onChange).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ file })]));
+    rerender(<PhotoPicker photos={[photo]} onChange={onChange} onError={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /Eliminar cultivo.png/i }));
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
 });
