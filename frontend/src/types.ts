@@ -34,6 +34,17 @@ export type ResultadoRiesgo = {
 
 export type ApiAnalysisResponse = { resultado: ResultadoRiesgo; analisis: Analisis };
 export type ClimaResumen = { temp_max: number | null; temp_min: number | null; prob_lluvia: number | null; humedad: number | null };
+export type IndiceRiesgoDiario = { puntuacion: number; nivel: NivelRiesgo };
+export type PronosticoDia = {
+  fecha: string;
+  etiqueta: string;
+  tempMax: number | null;
+  tempMin: number | null;
+  lluvia: number | null;
+  humedad: number | null;
+  viento: number | null;
+  riesgo: IndiceRiesgoDiario | null;
+};
 export type Imagen = { id: string; campo_id: string; storage_path: string; descripcion: string | null; created_at: string; signedUrl?: string };
 export type PendingPhoto = { id: string; file: File; descripcion: string; preview: string };
 export type HeatmapRiskLevel = "bajo" | "medio" | "alto";
