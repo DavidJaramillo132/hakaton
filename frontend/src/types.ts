@@ -36,3 +36,6 @@ export type ApiAnalysisResponse = { resultado: ResultadoRiesgo; analisis: Analis
 export type ClimaResumen = { temp_max: number | null; temp_min: number | null; prob_lluvia: number | null; humedad: number | null };
 export type Imagen = { id: string; campo_id: string; storage_path: string; descripcion: string | null; created_at: string; signedUrl?: string };
 export type PendingPhoto = { id: string; file: File; descripcion: string; preview: string };
+export type HeatmapRiskLevel = "bajo" | "medio" | "alto";
+export type HeatmapPoint = { ciudad: string; lat: number; lon: number; indice: number; nivel: HeatmapRiskLevel; lluvia_mm: number; prob_lluvia: number; humedad: number; viento_kmh: number };
+export type HeatmapResponse = { generado_en: string; puntos: HeatmapPoint[] };

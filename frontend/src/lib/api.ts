@@ -1,4 +1,5 @@
-import type { ApiAnalysisResponse, Campo, Coordinates, Imagen, PendingPhoto } from "../types";
+import type { ApiAnalysisResponse, Campo, Coordinates, HeatmapResponse, Imagen, PendingPhoto } from "../types";
+import { parseHeatmapResponse } from "./heatmap";
 import { supabase } from "./supabase";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
@@ -79,6 +80,26 @@ export async function analyzeField(campo: Campo, ubicacion: Coordinates): Promis
     return data;
   } catch (error) {
     throw new Error(message(error, "No se pudo obtener el análisis climático."));
+  }
+}
+
+export async function loadHeatmapRisk(): Promise<HeatmapResponse> {
+  try {
+    const { data: sessionData, error: sessionError } = await client().auth.getSession();
+    if (sessionError || !sessionData.session) throw new Error(sessionError?.message ?? "La sesión de Supabase no está disponible.");
+    if (!supabaseUrl || !supabaseKey) throw new Error("Faltan las variables de Supabase en el frontend.");
+    const response = await fetch(`${supabaseUrl}/functions/v1/mapaRiesgo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: supabaseKey, Authorization: `Bearer ${sessionData.session.access_token}` },
+    });
+    const data = await response.json().catch(() => null) as unknown;
+    if (!response.ok) {
+      const issue = data && typeof data === "object" && "error" in data && typeof data.error === "string" ? data.error : `La función mapaRiesgo respondió ${response.status}.`;
+      throw new Error(issue);
+    }
+    return parseHeatmapResponse(data);
+  } catch (error) {
+    throw new Error(message(error, "No se pudo cargar el mapa de riesgo."));
   }
 }
 
