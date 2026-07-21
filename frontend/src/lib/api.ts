@@ -2,6 +2,8 @@ import type { ApiAnalysisResponse, Campo, Coordinates, Imagen, PendingPhoto } fr
 import { supabase } from "./supabase";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 function client() {
   if (!supabase) throw new Error("Supabase no está configurado.");
@@ -64,9 +66,17 @@ export async function analyzeField(campo: Campo, ubicacion: Coordinates): Promis
     return data as ApiAnalysisResponse;
   }
   try {
-    const { data, error } = await client().functions.invoke("analizarRiesgo", { body: { campoId: campo.id, ubicacion } });
-    if (error || !data?.resultado || !data?.analisis) throw new Error(data?.error ?? await functionError(error) ?? error?.message ?? "No se pudo obtener el análisis climático.");
-    return data as ApiAnalysisResponse;
+    const { data: sessionData, error: sessionError } = await client().auth.getSession();
+    if (sessionError || !sessionData.session) throw new Error(sessionError?.message ?? "La sesión de Supabase no está disponible.");
+    if (!supabaseUrl || !supabaseKey) throw new Error("Faltan las variables de Supabase en el frontend.");
+    const response = await fetch(`${supabaseUrl}/functions/v1/analizarRiesgo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: supabaseKey, Authorization: `Bearer ${sessionData.session.access_token}` },
+      body: JSON.stringify({ campoId: campo.id, ubicacion }),
+    });
+    const data = await response.json().catch(() => null) as ApiAnalysisResponse & { error?: string } | null;
+    if (!response.ok || !data?.resultado || !data?.analisis) throw new Error(data?.error ?? `La función analizarRiesgo respondió ${response.status}.`);
+    return data;
   } catch (error) {
     throw new Error(message(error, "No se pudo obtener el análisis climático."));
   }
