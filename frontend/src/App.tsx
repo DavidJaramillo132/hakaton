@@ -9,6 +9,7 @@ import { getCurrentUser } from "./lib/auth";
 type Route = "/" | "/login" | "/app";
 
 
+
 function currentRoute(): Route {
   return window.location.pathname === "/login" || window.location.pathname === "/app" ? window.location.pathname : "/";
 }
