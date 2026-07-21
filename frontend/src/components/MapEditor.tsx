@@ -8,9 +8,12 @@ import { parsePolygon, selectionFromLayer } from "../lib/geometry";
 import type { HeatmapResponse, MapSelection } from "../types";
 import { HeatmapControl } from "./HeatmapControl";
 import { LocationControl } from "./LocationControl";
+import { DrawAreaButton } from "./DrawAreaButton";
 
 const PORTOVIEJO_CENTER: [number, number] = [-1.0546, -80.4547];
 type Props = { value: MapSelection | null; onChange: (selection: MapSelection | null) => void; fullWidth?: boolean };
+type DrawingProps = Props & { onDrawingReady: (start: (() => void) | null) => void };
+const polygonOptions: L.DrawOptions.PolygonOptions = { allowIntersection: false, shapeOptions: { color: "#287247", fillColor: "#79ad60", fillOpacity: 0.24 } };
 
 function MapSizeSync({ fullWidth }: { fullWidth: boolean }) {
   const map = useMap();
@@ -21,7 +24,7 @@ function MapSizeSync({ fullWidth }: { fullWidth: boolean }) {
   return null;
 }
 
-function DrawingControls({ value, onChange }: Props) {
+function DrawingControls({ value, onChange, onDrawingReady }: DrawingProps) {
   const map = useMap();
   const group = useRef(new L.FeatureGroup());
   const lastGeojson = useRef<string | null>(null);
@@ -31,8 +34,10 @@ function DrawingControls({ value, onChange }: Props) {
     map.addLayer(featureGroup);
     const control = new L.Control.Draw({
       edit: { featureGroup, remove: true },
-      draw: { polygon: { allowIntersection: false, shapeOptions: { color: "#287247", fillColor: "#79ad60", fillOpacity: 0.24 } }, polyline: false, rectangle: false, circle: false, marker: false, circlemarker: false },
+      draw: { polygon: polygonOptions, polyline: false, rectangle: false, circle: false, marker: false, circlemarker: false },
     });
+    // Leaflet Draw augments the runtime map; its type declarations expose that augmentation as DrawMap.
+    const polygonDrawer = new L.Draw.Polygon(map as L.DrawMap, polygonOptions);
     const setPolygon = (layer: L.Layer) => {
       featureGroup.clearLayers();
       featureGroup.addLayer(layer);
@@ -44,9 +49,10 @@ function DrawingControls({ value, onChange }: Props) {
     const edited: L.LeafletEventHandlerFn = () => { const layer = featureGroup.getLayers()[0]; if (layer) setPolygon(layer); };
     const deleted: L.LeafletEventHandlerFn = () => { lastGeojson.current = null; onChange(null); };
     map.addControl(control);
+    onDrawingReady(() => polygonDrawer.enable());
     map.on(L.Draw.Event.CREATED, created); map.on(L.Draw.Event.EDITED, edited); map.on(L.Draw.Event.DELETED, deleted);
-    return () => { map.off(L.Draw.Event.CREATED, created); map.off(L.Draw.Event.EDITED, edited); map.off(L.Draw.Event.DELETED, deleted); map.removeControl(control); map.removeLayer(featureGroup); };
-  }, [map, onChange]);
+    return () => { onDrawingReady(null); polygonDrawer.disable(); map.off(L.Draw.Event.CREATED, created); map.off(L.Draw.Event.EDITED, edited); map.off(L.Draw.Event.DELETED, deleted); map.removeControl(control); map.removeLayer(featureGroup); };
+  }, [map, onChange, onDrawingReady]);
 
   useEffect(() => {
     if (value?.geojson === lastGeojson.current) return;
@@ -157,6 +163,8 @@ export function MapEditor({ value, onChange, fullWidth = false }: Props) {
   const [locationActive, setLocationActive] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationErrorMessage, setLocationErrorMessage] = useState<string | null>(null);
+  const [startDrawing, setStartDrawing] = useState<(() => void) | null>(null);
+  const drawingReady = useCallback((start: (() => void) | null) => setStartDrawing(() => start), []);
 
   const toggleHeatmap = async () => {
     if (heatmap) { setHeatmapVisible((visible) => !visible); return; }
@@ -183,10 +191,11 @@ export function MapEditor({ value, onChange, fullWidth = false }: Props) {
       <MapSizeSync fullWidth={fullWidth} />
       <NationalRiskLayer data={heatmap} visible={heatmapVisible} />
       <LiveLocationLayer active={locationActive} onReady={locationReady} onError={locationFailed} onStopped={locationStopped} />
-      <DrawingControls value={value} onChange={onChange} />
+      <DrawingControls value={value} onChange={onChange} onDrawingReady={drawingReady} />
     </MapContainer>
+    <DrawAreaButton ready={Boolean(startDrawing)} onStart={() => startDrawing?.()} />
     <HeatmapControl visible={heatmapVisible} loading={heatmapLoading} error={heatmapError} onToggle={() => void toggleHeatmap()} />
     <LocationControl active={locationActive} loading={locationLoading} error={locationErrorMessage} onToggle={toggleLocation} />
-    <div className="pointer-events-none absolute bottom-4 left-4 z-[400] rounded-lg bg-white/95 px-3 py-2 text-xs font-medium text-leaf-900 shadow-lg">Selecciona la herramienta de polígono y marca tu parcela.</div>
+    <div className="pointer-events-none absolute bottom-4 left-4 z-[400] rounded-lg bg-white/95 px-3 py-2 text-xs font-medium text-leaf-900 shadow-lg">Usa “Dibujar área”, marca cada esquina y toca el primer punto para cerrar el polígono.</div>
   </div>;
 }

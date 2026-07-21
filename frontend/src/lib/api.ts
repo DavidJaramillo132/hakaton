@@ -54,6 +54,12 @@ export async function uploadPhotos(campoId: string, photos: PendingPhoto[]): Pro
   }));
 }
 
+export async function loadFieldPhotos(campoId: string): Promise<Imagen[]> {
+  const { data, error } = await client().functions.invoke("gestionarImagen", { body: { action: "list", campoId } });
+  if (error || !Array.isArray(data?.images)) throw new Error(data?.error ?? await functionError(error) ?? error?.message ?? "No se pudieron cargar las fotos.");
+  return data.images as Imagen[];
+}
+
 export async function analyzeField(campo: Campo, ubicacion: Coordinates): Promise<ApiAnalysisResponse> {
   if (apiBaseUrl) {
     const { data: { session } } = await client().auth.getSession();
@@ -111,5 +117,14 @@ export async function loadHistory(): Promise<HistoryData> {
   ]);
   if (fieldsError) throw new Error(fieldsError.message);
   if (analysesError) throw new Error(analysesError.message);
-  return { fields: (fields ?? []) as Campo[], analyses: (rows ?? []) as Analisis[] };
+  const savedFields = (fields ?? []) as Campo[];
+  const imageGroups = await Promise.all(savedFields.map(async (field) => {
+    try {
+      return await loadFieldPhotos(field.id);
+    } catch {
+      // Una foto vencida o inaccesible no debe impedir consultar el análisis.
+      return [] as Imagen[];
+    }
+  }));
+  return { fields: savedFields, analyses: (rows ?? []) as Analisis[], images: imageGroups.flat() };
 }
