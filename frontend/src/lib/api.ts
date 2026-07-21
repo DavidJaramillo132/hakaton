@@ -8,6 +8,18 @@ function client() {
   return supabase;
 }
 
+async function functionError(error: unknown): Promise<string | null> {
+  if (!error || typeof error !== "object" || !("context" in error)) return null;
+  const response = (error as { context?: unknown }).context;
+  if (!(response instanceof Response)) return null;
+  try {
+    const payload = await response.clone().json() as { error?: unknown };
+    return typeof payload.error === "string" ? payload.error : null;
+  } catch {
+    return null;
+  }
+}
+
 function message(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
@@ -34,7 +46,7 @@ export async function uploadPhotos(campoId: string, photos: PendingPhoto[]): Pro
     const { data, error } = await db.functions.invoke("gestionarImagen", {
       body: { action: "upload", campoId, fileName: file.name, contentType: file.type, base64: await fileToBase64(file), descripcion: descripcion || undefined },
     });
-    if (error || !data?.image) throw new Error(error?.message ?? data?.error ?? "No se pudo subir una imagen.");
+    if (error || !data?.image) throw new Error(data?.error ?? await functionError(error) ?? error?.message ?? "No se pudo subir una imagen.");
     return data.image as Imagen;
   }));
 }
@@ -53,7 +65,7 @@ export async function analyzeField(campo: Campo, ubicacion: Coordinates): Promis
   }
   try {
     const { data, error } = await client().functions.invoke("analizarRiesgo", { body: { campoId: campo.id, ubicacion } });
-    if (error || !data?.resultado || !data?.analisis) throw new Error(error?.message ?? data?.error ?? "No se pudo obtener el análisis climático.");
+    if (error || !data?.resultado || !data?.analisis) throw new Error(data?.error ?? await functionError(error) ?? error?.message ?? "No se pudo obtener el análisis climático.");
     return data as ApiAnalysisResponse;
   } catch (error) {
     throw new Error(message(error, "No se pudo obtener el análisis climático."));
