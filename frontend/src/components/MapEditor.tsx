@@ -10,7 +10,16 @@ import { HeatmapControl } from "./HeatmapControl";
 import { LocationControl } from "./LocationControl";
 
 const PORTOVIEJO_CENTER: [number, number] = [-1.0546, -80.4547];
-type Props = { value: MapSelection | null; onChange: (selection: MapSelection | null) => void };
+type Props = { value: MapSelection | null; onChange: (selection: MapSelection | null) => void; fullWidth?: boolean };
+
+function MapSizeSync({ fullWidth }: { fullWidth: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+    return () => cancelAnimationFrame(frame);
+  }, [fullWidth, map]);
+  return null;
+}
 
 function DrawingControls({ value, onChange }: Props) {
   const map = useMap();
@@ -140,7 +149,7 @@ function LiveLocationLayer({ active, onReady, onError, onStopped }: {
   return null;
 }
 
-export function MapEditor({ value, onChange }: Props) {
+export function MapEditor({ value, onChange, fullWidth = false }: Props) {
   const [heatmap, setHeatmap] = useState<HeatmapResponse | null>(null);
   const [heatmapVisible, setHeatmapVisible] = useState(false);
   const [heatmapLoading, setHeatmapLoading] = useState(false);
@@ -171,6 +180,7 @@ export function MapEditor({ value, onChange }: Props) {
   return <div className="relative h-[500px] overflow-hidden rounded-2xl border border-leaf-100 bg-leaf-50 shadow-inner sm:h-[620px]" aria-label="Mapa para dibujar el área del cultivo">
     <MapContainer center={PORTOVIEJO_CENTER} zoom={13} scrollWheelZoom className="h-full w-full">
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <MapSizeSync fullWidth={fullWidth} />
       <NationalRiskLayer data={heatmap} visible={heatmapVisible} />
       <LiveLocationLayer active={locationActive} onReady={locationReady} onError={locationFailed} onStopped={locationStopped} />
       <DrawingControls value={value} onChange={onChange} />
