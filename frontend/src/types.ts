@@ -1,4 +1,6 @@
-export const CULTIVOS = ["cacao", "café", "plátano", "maíz", "arroz"] as const;
+// Valores canónicos: deben coincidir con el CHECK constraint de public.campos.
+// Las etiquetas con acentos se presentan únicamente en la interfaz.
+export const CULTIVOS = ["cacao", "cafe", "platano", "maiz", "arroz"] as const;
 export type Cultivo = (typeof CULTIVOS)[number];
 export type NivelRiesgo = "bajo" | "medio" | "alto";
 export type Coordinates = { lat: number; lon: number };

@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { CULTIVOS, type Cultivo } from "../types";
 
 type Props = { value: Cultivo | ""; onChange: (value: Cultivo) => void };
-const label = (crop: Cultivo) => crop[0].toUpperCase() + crop.slice(1);
+const LABELS: Record<Cultivo, string> = { cacao: "Cacao", cafe: "Café", platano: "Plátano", maiz: "Maíz", arroz: "Arroz" };
+const label = (crop: Cultivo) => LABELS[crop];
 
 export function CropListbox({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
