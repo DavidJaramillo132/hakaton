@@ -14,8 +14,8 @@ Los pequeños y medianos productores de Manabí no siempre tienen acceso fácil 
 
 ## Flujo de la solución
 
-1. El usuario conoce la solución en la landing y solicita un código OTP por correo.
-2. Tras verificar el código, obtiene una sesión protegida de Supabase Auth.
+1. El usuario conoce la solución en la landing y solicita un enlace de verificación por correo.
+2. Tras abrir el enlace, obtiene una sesión protegida de Supabase Auth.
 3. Dibuja el área de su campo sobre un mapa (Leaflet).
 4. Selecciona el cultivo (cacao, café, plátano, maíz, arroz).
 5. Puede agregar una o varias fotos del estado actual del cultivo (se suben a Supabase Storage).
@@ -32,13 +32,13 @@ Los pequeños y medianos productores de Manabí no siempre tienen acceso fácil 
 | Cálculo de centroide | Turf.js |
 | Datos climáticos | Open-Meteo (API pública, sin key) |
 | Análisis de riesgo | OpenAI API (structured output / JSON schema) |
-| Base de datos y autenticación | Supabase (Postgres + Auth por correo OTP) |
+| Base de datos y autenticación | Supabase (Postgres + Auth por enlace de correo) |
 | Almacenamiento de imágenes | Supabase Storage |
 | Generación de código asistida | OpenAI Codex |
 
 ## Multiusuario y almacenamiento de imágenes
 
-- **Autenticación**: Supabase Auth con inicio de sesión sin contraseña por código OTP enviado al correo. Cada usuario recibe un `user_id` autenticado tras validar el código, y ese id queda asociado a sus campos y análisis.
+- **Autenticación**: Supabase Auth con inicio de sesión sin contraseña por enlace de verificación enviado al correo. Cada usuario recibe un `user_id` autenticado tras abrir el enlace, y ese id queda asociado a sus campos y análisis.
 - **Row Level Security (RLS)**: activado en `campos`, `analisis` e `imagenes` para que cada usuario solo pueda ver y modificar sus propios registros (`auth.uid() = user_id`).
 - **Imágenes**: los archivos se guardan en Supabase Storage (bucket `cultivo-imagenes`); la base de datos solo guarda la referencia (ruta) a cada imagen, no el binario.
 

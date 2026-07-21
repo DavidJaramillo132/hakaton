@@ -1,13 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Login } from "./Login";
-import { getCurrentUser, requestEmailOtp, verifyEmailOtp } from "./lib/auth";
+import { getCurrentUser, requestVerificationEmail } from "./lib/auth";
 
-vi.mock("./lib/auth", () => ({ getCurrentUser: vi.fn(), requestEmailOtp: vi.fn(), verifyEmailOtp: vi.fn() }));
+vi.mock("./lib/auth", () => ({ getCurrentUser: vi.fn(), requestVerificationEmail: vi.fn() }));
 
 const getCurrentUserMock = vi.mocked(getCurrentUser);
-const requestEmailOtpMock = vi.mocked(requestEmailOtp);
-const verifyEmailOtpMock = vi.mocked(verifyEmailOtp);
+const requestVerificationEmailMock = vi.mocked(requestVerificationEmail);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -15,42 +14,30 @@ beforeEach(() => {
 });
 
 describe("Login", () => {
-  it("solicita un OTP y muestra el formulario para verificarlo", async () => {
-    requestEmailOtpMock.mockResolvedValue(undefined);
+  it("envía un enlace de verificación y muestra la confirmación", async () => {
+    requestVerificationEmailMock.mockResolvedValue(undefined);
     render(<Login onAuthenticated={vi.fn()} />);
 
     fireEvent.change(screen.getByLabelText("Correo electrónico"), { target: { value: " Productor@OxiTech.dev " } });
-    fireEvent.click(screen.getByRole("button", { name: /enviar código/i }));
+    fireEvent.click(screen.getByRole("button", { name: /enviar enlace de verificación/i }));
 
-    await waitFor(() => expect(requestEmailOtpMock).toHaveBeenCalledWith("productor@oxitech.dev"));
-    expect(screen.getByLabelText("Código de seis dígitos")).toBeInTheDocument();
+    await waitFor(() => expect(requestVerificationEmailMock).toHaveBeenCalledWith("productor@oxitech.dev"));
+    expect(screen.getByRole("heading", { name: "Abre el enlace." })).toBeInTheDocument();
   });
 
-  it("muestra el error cuando el código OTP no es válido", async () => {
-    requestEmailOtpMock.mockResolvedValue(undefined);
-    verifyEmailOtpMock.mockRejectedValue(new Error("El código no es válido o venció."));
+  it("muestra un error si Supabase no puede enviar el enlace", async () => {
+    requestVerificationEmailMock.mockRejectedValue(new Error("No se pudo enviar el correo de verificación."));
     render(<Login onAuthenticated={vi.fn()} />);
     fireEvent.change(screen.getByLabelText("Correo electrónico"), { target: { value: "productor@oxitech.dev" } });
-    fireEvent.click(screen.getByRole("button", { name: /enviar código/i }));
-    await screen.findByLabelText("Código de seis dígitos");
+    fireEvent.click(screen.getByRole("button", { name: /enviar enlace de verificación/i }));
 
-    fireEvent.change(screen.getByLabelText("Código de seis dígitos"), { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: /entrar al programa/i }));
-
-    expect(await screen.findByText("El código no es válido o venció.")).toBeInTheDocument();
+    expect(await screen.findByText("No se pudo enviar el correo de verificación.")).toBeInTheDocument();
   });
 
-  it("abre el programa cuando Supabase valida el OTP", async () => {
+  it("abre el programa de inmediato si ya hay una sesión válida", async () => {
     const onAuthenticated = vi.fn();
-    requestEmailOtpMock.mockResolvedValue(undefined);
-    verifyEmailOtpMock.mockResolvedValue({ id: "user-1", email: "productor@oxitech.dev" } as never);
+    getCurrentUserMock.mockResolvedValue({ id: "user-1", email: "productor@oxitech.dev" } as never);
     render(<Login onAuthenticated={onAuthenticated} />);
-    fireEvent.change(screen.getByLabelText("Correo electrónico"), { target: { value: "productor@oxitech.dev" } });
-    fireEvent.click(screen.getByRole("button", { name: /enviar código/i }));
-    await screen.findByLabelText("Código de seis dígitos");
-
-    fireEvent.change(screen.getByLabelText("Código de seis dígitos"), { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: /entrar al programa/i }));
 
     await waitFor(() => expect(onAuthenticated).toHaveBeenCalledOnce());
   });

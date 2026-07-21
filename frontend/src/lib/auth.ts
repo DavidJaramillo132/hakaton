@@ -15,18 +15,12 @@ export async function getCurrentUser(): Promise<User | null> {
   return error ? null : user;
 }
 
-export async function requestEmailOtp(email: string) {
+export async function requestVerificationEmail(email: string) {
   const { error } = await client().auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: { shouldCreateUser: true, emailRedirectTo: `${window.location.origin}/app` },
   });
-  if (error) throw failure(error, "No se pudo enviar el código.");
-}
-
-export async function verifyEmailOtp(email: string, token: string): Promise<User> {
-  const { data, error } = await client().auth.verifyOtp({ email, token, type: "email" });
-  if (error || !data.user) throw failure(error, "El código no es válido o venció.");
-  return data.user;
+  if (error) throw failure(error, "No se pudo enviar el correo de verificación.");
 }
 
 export async function signOut() {
