@@ -14,14 +14,15 @@ Los pequeños y medianos productores de Manabí no siempre tienen acceso fácil 
 
 ## Flujo de la solución
 
-1. Al entrar, el usuario recibe una sesión anónima (Supabase Auth) que identifica sus datos.
-2. Dibuja el área de su campo sobre un mapa (Leaflet).
-3. Selecciona el cultivo (cacao, café, plátano, maíz, arroz).
-4. Puede agregar una o varias fotos del estado actual del cultivo (se suben a Supabase Storage).
-5. La app calcula el centroide del área dibujada.
-6. Se consulta el pronóstico climático de ese punto.
-7. OpenAI analiza clima + cultivo y devuelve: nivel de riesgo, tipo de riesgo y acciones recomendadas.
-8. El resultado se muestra en tarjetas y se guarda, junto con las imágenes, asociado al usuario.
+1. El usuario conoce la solución en la landing y solicita un código OTP por correo.
+2. Tras verificar el código, obtiene una sesión protegida de Supabase Auth.
+3. Dibuja el área de su campo sobre un mapa (Leaflet).
+4. Selecciona el cultivo (cacao, café, plátano, maíz, arroz).
+5. Puede agregar una o varias fotos del estado actual del cultivo (se suben a Supabase Storage).
+6. La app calcula el centroide del área dibujada.
+7. Se consulta el pronóstico climático de ese punto.
+8. OpenAI analiza clima + cultivo y devuelve: nivel de riesgo, tipo de riesgo y acciones recomendadas.
+9. El resultado se muestra en tarjetas y se guarda, junto con las imágenes, asociado al usuario.
 
 ## Stack
 
@@ -31,13 +32,13 @@ Los pequeños y medianos productores de Manabí no siempre tienen acceso fácil 
 | Cálculo de centroide | Turf.js |
 | Datos climáticos | Open-Meteo (API pública, sin key) |
 | Análisis de riesgo | OpenAI API (structured output / JSON schema) |
-| Base de datos y autenticación | Supabase (Postgres + Auth anónimo) |
+| Base de datos y autenticación | Supabase (Postgres + Auth por correo OTP) |
 | Almacenamiento de imágenes | Supabase Storage |
 | Generación de código asistida | OpenAI Codex |
 
 ## Multiusuario y almacenamiento de imágenes
 
-- **Autenticación**: Supabase Auth con inicio de sesión anónimo. Cada usuario recibe un `user_id` de sesión automáticamente al entrar, sin pantalla de login, y ese id queda asociado a sus campos y análisis. Se puede convertir después en cuenta real (email/Google) sin perder datos.
+- **Autenticación**: Supabase Auth con inicio de sesión sin contraseña por código OTP enviado al correo. Cada usuario recibe un `user_id` autenticado tras validar el código, y ese id queda asociado a sus campos y análisis.
 - **Row Level Security (RLS)**: activado en `campos`, `analisis` e `imagenes` para que cada usuario solo pueda ver y modificar sus propios registros (`auth.uid() = user_id`).
 - **Imágenes**: los archivos se guardan en Supabase Storage (bucket `cultivo-imagenes`); la base de datos solo guarda la referencia (ruta) a cada imagen, no el binario.
 
