@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateDailyRisk, extractClimateSummary, extractWeeklyForecast } from "./climate";
+import { calculateDailyRisk, compareRisk, extractClimateSummary, extractWeeklyForecast, generateActionPlan, simulateForecast } from "./climate";
 
 describe("extractClimateSummary", () => {
   it("uses the first daily forecast values", () => {
@@ -18,5 +18,13 @@ describe("extractClimateSummary", () => {
     expect(calculateDailyRisk({ lluvia: 10, humedad: 20, tempMax: 28, tempMin: 22, viento: 10 })).toMatchObject({ nivel: "bajo" });
     expect(calculateDailyRisk({ lluvia: 50, humedad: 50, tempMax: 30, tempMin: 20, viento: 20 })).toMatchObject({ nivel: "medio" });
     expect(calculateDailyRisk({ lluvia: 80, humedad: 90, tempMax: 34, tempMin: 22, viento: 30 })).toMatchObject({ nivel: "alto" });
+  });
+  it("generates a seven-day action plan and simulates adjustments", () => {
+    const days = extractWeeklyForecast({ daily: { time: ["2026-07-21", "2026-07-22"], temperature_2m_max: [29, 30], temperature_2m_min: [22, 22], precipitation_probability_max: [10, 20], relative_humidity_2m_mean: [60, 70], wind_speed_10m_max: [10, 10] } });
+    expect(generateActionPlan(days)).toHaveLength(2);
+    const simulated = simulateForecast(days, { lluvia: 20, temperatura: -3, humedad: 10, viento: 5 });
+    expect(simulated[0].lluvia).toBe(12);
+    expect(simulated[0].tempMax).toBe(26);
+    expect(compareRisk(days, simulated)).toHaveProperty("delta");
   });
 });

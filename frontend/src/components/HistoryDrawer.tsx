@@ -80,7 +80,7 @@ export function HistoryDrawer({ open, onClose, refreshToken = 0 }: Props) {
 
   const response = useMemo<ApiAnalysisResponse | null>(() => {
     if (!selected) return null;
-    return { resultado: { nivel_riesgo: selected.analisis.nivel_riesgo, tipo_riesgo: selected.analisis.tipo_riesgo, recomendaciones: selected.analisis.recomendaciones }, analisis: selected.analisis };
+    return { resultado: { nivel_riesgo: selected.analisis.nivel_riesgo, tipo_riesgo: selected.analisis.tipo_riesgo, recomendaciones: selected.analisis.recomendaciones, plan_7_dias: selected.analisis.plan_7_dias ?? undefined }, analisis: selected.analisis };
   }, [selected]);
 
   if (!open) return null;

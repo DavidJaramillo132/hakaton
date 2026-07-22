@@ -26,10 +26,10 @@ Las claves SMTP se guardan únicamente en los ajustes de Supabase. No se incluye
 
 De forma predeterminada, la aplicación usa las Edge Functions incluidas en `../backend`:
 
-- `analizarRiesgo`, con `{ campoId, ubicacion: { lat, lon } }`.
+- `analizarRiesgo`, con `{ campoId, ubicacion: { lat, lon } }`; la respuesta puede incluir `resultado.plan_7_dias` y `analisis.plan_7_dias`.
 - `gestionarImagen`, para subir y registrar fotos en el bucket privado.
 
-Si se define `VITE_API_BASE_URL`, se emplea una API REST externa en `POST {VITE_API_BASE_URL}/api/analisis`. Debe aceptar `{ campoId, cultivo, centroide, geojson }` y responder con `{ resultado, analisis }`.
+Si se define `VITE_API_BASE_URL`, se emplea una API REST externa en `POST {VITE_API_BASE_URL}/api/analisis`. Debe aceptar `{ campoId, cultivo, centroide, geojson, fecha_siembra, edad_cultivo_meses, sistema_riego, tipo_suelo, ultima_aplicacion_fertilizante, variedad_cultivo }` y responder con `{ resultado, analisis }`.
 
 ## Verificación
 

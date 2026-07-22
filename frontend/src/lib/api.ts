@@ -27,7 +27,7 @@ function message(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export async function createField(field: Pick<Campo, "nombre" | "cultivo" | "geojson">, userId: string): Promise<Campo> {
+export async function createField(field: Pick<Campo, "nombre" | "cultivo" | "geojson" | "fecha_siembra" | "edad_cultivo_meses" | "sistema_riego" | "tipo_suelo" | "ultima_aplicacion_fertilizante" | "variedad_cultivo">, userId: string): Promise<Campo> {
   const { data, error } = await client().from("campos").insert({ ...field, user_id: userId }).select().single();
   if (error || !data) throw new Error(error?.message ?? "No se pudo guardar el campo.");
   return data as Campo;
@@ -66,7 +66,7 @@ export async function analyzeField(campo: Campo, ubicacion: Coordinates): Promis
     const response = await fetch(`${apiBaseUrl}/api/analisis`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-      body: JSON.stringify({ campoId: campo.id, cultivo: campo.cultivo, centroide: ubicacion, geojson: campo.geojson }),
+      body: JSON.stringify({ campoId: campo.id, ubicacion, cultivo: campo.cultivo, centroide: ubicacion, geojson: campo.geojson, fecha_siembra: campo.fecha_siembra, edad_cultivo_meses: campo.edad_cultivo_meses, sistema_riego: campo.sistema_riego, tipo_suelo: campo.tipo_suelo, ultima_aplicacion_fertilizante: campo.ultima_aplicacion_fertilizante, variedad_cultivo: campo.variedad_cultivo }),
     });
     const data = await response.json().catch(() => null);
     if (!response.ok || !data) throw new Error(data?.error ?? "No se pudo obtener el análisis climático.");

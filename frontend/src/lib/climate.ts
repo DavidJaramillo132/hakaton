@@ -1,4 +1,4 @@
-import type { ClimaResumen, IndiceRiesgoDiario, NivelRiesgo, PronosticoDia } from "../types";
+import type { AccionDia, ClimaResumen, IndiceRiesgoDiario, NivelRiesgo, PronosticoDia, SimulacionAjustes } from "../types";
 
 function firstNumber(value: unknown): number | null {
   if (!Array.isArray(value) || typeof value[0] !== "number" || !Number.isFinite(value[0])) return null;
@@ -73,4 +73,23 @@ export function extractWeeklyForecast(clima: Record<string, unknown>): Pronostic
     const riesgo = calculateDailyRisk(base);
     return base.tempMax !== null || base.tempMin !== null || base.lluvia !== null || base.humedad !== null || base.viento !== null ? [{ ...base, riesgo }] : [];
   });
+}
+
+export function generateActionPlan(days: PronosticoDia[]): AccionDia[] {
+  return days.slice(0, 7).map((day) => {
+    const risk = day.riesgo?.nivel ?? "bajo";
+    const accion = (day.lluvia ?? 0) >= 70 ? "Revisar drenaje y evitar labores con suelo saturado" : (day.humedad ?? 0) >= 80 ? "Inspeccionar hojas y mantener ventilación" : (day.viento ?? 0) >= 35 ? "Asegurar tutores y evitar aplicaciones" : risk === "bajo" ? "Ventana ideal para labores del cultivo" : "Monitorear el cultivo y ajustar labores";
+    const motivo = (day.lluvia ?? 0) >= 70 ? "La probabilidad de lluvia elevada puede saturar el suelo." : (day.humedad ?? 0) >= 80 ? "La humedad alta favorece condiciones de presión sanitaria." : (day.viento ?? 0) >= 35 ? "El viento puede dispersar aplicaciones y dañar plantas." : "Las condiciones previstas permiten labores preventivas.";
+    return { fecha: day.fecha, etiqueta: day.etiqueta, accion, motivo, nivel_riesgo: risk };
+  });
+}
+
+export function simulateForecast(days: PronosticoDia[], adjustments: SimulacionAjustes): PronosticoDia[] {
+  return days.map((day) => ({ ...day, lluvia: day.lluvia === null ? null : Math.min(100, Math.max(0, day.lluvia * (1 + adjustments.lluvia / 100))), tempMax: day.tempMax === null ? null : day.tempMax + adjustments.temperatura, tempMin: day.tempMin === null ? null : day.tempMin + adjustments.temperatura, humedad: day.humedad === null ? null : Math.min(100, Math.max(0, day.humedad + adjustments.humedad)), viento: day.viento === null ? null : Math.max(0, day.viento + adjustments.viento) })).map((day) => ({ ...day, riesgo: calculateDailyRisk(day) }));
+}
+
+export function compareRisk(original: PronosticoDia[], simulated: PronosticoDia[]) {
+  const originalScore = original.reduce((sum, day) => sum + (day.riesgo?.puntuacion ?? 0), 0) / Math.max(1, original.length);
+  const simulatedScore = simulated.reduce((sum, day) => sum + (day.riesgo?.puntuacion ?? 0), 0) / Math.max(1, simulated.length);
+  return { original: Math.round(originalScore), simulated: Math.round(simulatedScore), delta: Math.round(simulatedScore - originalScore) };
 }

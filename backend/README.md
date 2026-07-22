@@ -2,7 +2,7 @@
 
 El backend usa Supabase Auth anónimo, Postgres, Storage y dos Edge Functions.
 
-- `analizarRiesgo` recibe `campoId` y el centroide `{ lat, lon }`, consulta Open-Meteo, solicita el análisis estructurado a OpenAI y guarda el resultado.
+- `analizarRiesgo` recibe `campoId` y el centroide `{ lat, lon }`, consulta Open-Meteo, solicita el análisis estructurado a OpenAI incluyendo los datos agrícolas, genera un plan de siete días con fallback determinista y guarda el resultado.
 - `gestionarImagen` recibe una imagen base64 de hasta 5 MB, la guarda en el bucket privado y registra el metadato.
 
 ## Secretos
